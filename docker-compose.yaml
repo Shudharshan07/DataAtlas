@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+
+  ingestion-service:
+    build: ./ingestion-service
+    depends_on:
+      - redis
+    environment:
+      REDIS_ADDR: redis:6379
+
+  state-management-service:
+    build: ./state-management-service
+    depends_on:
+      - ipfs
+      - neo4j
+    environment:
+      IPFS_API: /dns4/ipfs/tcp/5001
+      NEO4J_URI: bolt://neo4j:7687
+
+  motif-service:
+    build: ./motif-service
+    depends_on:
+      - weaviate
+    environment:
+      WEAVIATE_ENDPOINT: http://weaviate:8080
+
+  query-service:
+    build: ./query-service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - state-management-service
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  ipfs:
+    image: ipfs/kubo:latest
+    ports:
+      - "4001:4001"
+      - "5001:5001"
+
+  neo4j:
+    image: neo4j:5-community
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+
+  weaviate:
+    image: semitechnologies/weaviate:1.24.1
+    ports:
+      - "8080:8080"
